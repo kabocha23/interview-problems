@@ -1,0 +1,110 @@
+/*
+employees                             projects
++---------------+---------+           +---------------+---------+
+| id            | int     |<----+  +->| id            | int     |
+| first_name    | varchar |     |  |  | title         | varchar |
+| last_name     | varchar |     |  |  | start_date    | date    |
+| annual_salary | int     |     |  |  | end_date      | date    |
+| department_id | int     |--+  |  |  | budget        | int     |
++---------------+---------+  |  |  |  +---------------+---------+
+                             |  |  |
+departments                  |  |  |  employees_projects
++---------------+---------+  |  |  |  +---------------+---------+
+| id            | int     |<-+  |  +--| project_id    | int     |
+| name          | varchar |     +-----| employee_id   | int     |
++---------------+---------+           +---------------+---------+
+*/
+
+create table employees (
+  id            int AUTO_INCREMENT,
+  first_name    varchar(255),
+  last_name     varchar(255),
+  annual_salary int,
+  department_id int,
+
+  primary key(id),
+  key(department_id)
+);
+
+insert into employees
+  (first_name, last_name, annual_salary, department_id)
+values
+  ('John',   'Smith',     20000, 1),
+  ('Ava',    'Muffinson', 10000, 5),
+  ('Cailin', 'Ninson',    30000, 2),
+  ('Mike',   'Peterson',  20000, 2),
+  ('Ian',    'Peterson',  80000, 2),
+  ('John',   'Mills',     50000, 3);
+
+create table projects
+(
+  id            int AUTO_INCREMENT,
+  title         varchar(255),
+  start_date    date,
+  end_date      date,
+  budget        int,
+
+  primary key(id)
+);
+
+insert into projects
+  (title, start_date, end_date, budget)
+values
+  ('Build a cool site',        '2011-10-28', '2012-01-26', 10000),
+  ('Update TPS Reports',       '2011-07-20', '2011-10-28',  5000),
+  ('Design 3 New Silly Walks', '2009-05-11', '2009-08-19',     100);
+
+create table departments
+(
+  id   int auto_increment,
+  name varchar(255),
+
+  primary key(id)
+);
+
+insert into departments
+  (name)
+values
+  ('Reporting'),
+  ('Engineering'),
+  ('Marketing'),
+  ('Biz Dev'),
+  ('Silly Walks');
+  
+CREATE TABLE employees_projects (
+  project_id int,
+  employee_id int,
+
+  FOREIGN KEY(project_id)
+    REFERENCES projects(id),
+  FOREIGN KEY(employee_id)
+    REFERENCES employees(id)
+);
+
+insert into employees_projects
+  (project_id, employee_id)
+values
+  (2, 1),
+  (3, 2),
+  (1, 3),
+  (1, 4),
+  (1, 5);
+
+
+SELECT 
+    projs_id,
+    projs_title,
+    ROUND(projs_cost - projs_budget,-3) over_budget
+FROM (
+    SELECT
+        p.id projs_id,
+        p.title projs_title,
+        SUM(e.annual_salary) projs_cost,
+        p.budget projs_budget
+    FROM employees_projects ep
+    JOIN employees e ON e.id = ep.employee_id
+    JOIN projects p ON p.id = ep.project_id
+    GROUP BY 1, 2, 4
+) projects_cost
+ORDER BY over_budget DESC LIMIT 1
+;
